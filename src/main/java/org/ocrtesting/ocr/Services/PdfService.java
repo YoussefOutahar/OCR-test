@@ -32,7 +32,11 @@ public class PdfService {
                 pdfTextBuilder.append("\n--- Page Break ---\n");
             }
 
-            return String;
+            reader.close();
+            
+            // Normalize the text to show the Arabic characters correctly
+            return new String(pdfTextBuilder.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+            
         } catch (IOException e) {
             e.printStackTrace();
             return "Error extracting text from PDF";
