@@ -1,25 +1,32 @@
 package org.ocrtesting.ocr.Services;
 
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.pdf.BaseFont;
-import com.itextpdf.text.pdf.PdfEncodings;
 import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.languages.ArabicLigaturizer;
-import com.itextpdf.text.pdf.parser.PdfTextExtractor;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.font.PDFont;
-import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.springframework.stereotype.Service;
+import com.itextpdf.text.pdf.parser.LocationTextExtractionStrategy;
+import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
+import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
 
-import java.io.File;
-import java.io.IOException;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+
+import javax.imageio.ImageIO;
+
+import java.io.ByteArrayOutputStream;
+import org.springframework.mock.web.MockMultipartFile;
+import java.io.IOException;
 
 @Service
 public class PdfService {
+
+    @Autowired
+    private OcrService ocrService;
 
     public String extractTextFromPdfWithIText(InputStream pdfInputStream) throws IOException {
 
@@ -27,14 +34,15 @@ public class PdfService {
 
         try {
             PdfReader reader = new PdfReader(pdfInputStream);
-            BaseFont arabicBaseFont = BaseFont.createFont("Fonts/Noto_Naskh_Arabic/NotoNaskhArabic-VariableFont_wght.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-            BaseFont arabicBaseFont2 = BaseFont.createFont("Fonts/arialuni.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            PdfReaderContentParser parser = new PdfReaderContentParser(reader);
+            TextExtractionStrategy strategy;
 
-            
-            System.out.println(arabicBaseFont.getEncoding());
             for (int i = 1; i <= reader.getNumberOfPages(); i++) {
-                String textFromPage = PdfTextExtractor.getTextFromPage(reader, i);
-                pdfTextBuilder.append(new String(textFromPage.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
+
+                strategy = parser.processContent(i, new LocationTextExtractionStrategy());
+                
+
+                pdfTextBuilder.append(strategy.getResultantText());
                 pdfTextBuilder.append("\n--- Page Break ---\n");
             }
 
@@ -44,8 +52,6 @@ public class PdfService {
         } catch (IOException e) {
             e.printStackTrace();
             return "Error extracting text from PDF";
-        } catch (DocumentException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -55,7 +61,7 @@ public class PdfService {
         try {
             PDDocument document = PDDocument.load(pdfInputStream);
 
-            PDFont font = PDTrueTypeFont.loadTTF(document, new File("Fonts/Noto_Naskh_Arabic/NotoNaskhArabic-VariableFont_wght.ttf"));
+            // PDFont font = PDTrueTypeFont.loadTTF(document, new File("Fonts/Noto_Naskh_Arabic/NotoNaskhArabic-VariableFont_wght.ttf"));
             PDFTextStripper stripper = new PDFTextStripper();
             pdfTextBuilder.append(stripper.getText(document));
 
@@ -65,5 +71,26 @@ public class PdfService {
         }
 
         return pdfTextBuilder.toString();
+    }
+
+    public String extractTextFromPdfWithImageTransform(InputStream pdfInputStream) throws IOException {
+        BufferedImage image = pdfToImage(pdfInputStream);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", baos);
+        byte[] imageInByte = baos.toByteArray();
+        baos.close();
+
+        return ocrService.performOcr(new MockMultipartFile("ImageFromPDF.png", imageInByte), "eng+ara");
+    }
+
+    public BufferedImage pdfToImage(InputStream pdfInputStream) throws IOException {
+        try (PDDocument document = PDDocument.load(pdfInputStream)) {
+            PDFRenderer pdfRenderer = new PDFRenderer(document);
+            return pdfRenderer.renderImageWithDPI(0, 300); // 0 is the page number, 300 is the DPI
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
