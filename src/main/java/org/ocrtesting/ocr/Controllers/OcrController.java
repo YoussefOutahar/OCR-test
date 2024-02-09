@@ -27,7 +27,7 @@ public class OcrController {
 
 
     @PostMapping("/perform")
-    public String performOcr(@RequestPart("image") MultipartFile file, @RequestPart("language") String language){
+    public String performOcr(@RequestPart("file") MultipartFile file, @RequestPart("language") String language){
         try {
             if (file.getContentType() != null && file.getContentType().startsWith("image")) {
                 // Handle image file

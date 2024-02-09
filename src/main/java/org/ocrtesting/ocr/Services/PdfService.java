@@ -2,7 +2,9 @@ package org.ocrtesting.ocr.Services;
 
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.pdf.BaseFont;
+import com.itextpdf.text.pdf.PdfEncodings;
 import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.languages.ArabicLigaturizer;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.font.PDFont;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 @Service
@@ -25,7 +28,10 @@ public class PdfService {
         try {
             PdfReader reader = new PdfReader(pdfInputStream);
             BaseFont arabicBaseFont = BaseFont.createFont("Fonts/Noto_Naskh_Arabic/NotoNaskhArabic-VariableFont_wght.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            BaseFont arabicBaseFont2 = BaseFont.createFont("Fonts/arialuni.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 
+            
+            System.out.println(arabicBaseFont.getEncoding());
             for (int i = 1; i <= reader.getNumberOfPages(); i++) {
                 String textFromPage = PdfTextExtractor.getTextFromPage(reader, i);
                 pdfTextBuilder.append(new String(textFromPage.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
@@ -33,10 +39,8 @@ public class PdfService {
             }
 
             reader.close();
-            
-            // Normalize the text to show the Arabic characters correctly
-            return new String(pdfTextBuilder.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
-            
+
+            return pdfTextBuilder.toString();
         } catch (IOException e) {
             e.printStackTrace();
             return "Error extracting text from PDF";
