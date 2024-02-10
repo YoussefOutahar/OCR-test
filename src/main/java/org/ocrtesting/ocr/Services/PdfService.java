@@ -9,10 +9,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 
@@ -74,14 +71,23 @@ public class PdfService {
     }
 
     public String extractTextFromPdfWithImageTransform(InputStream pdfInputStream) throws IOException {
-        BufferedImage image = pdfToImage(pdfInputStream);
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", baos);
-        byte[] imageInByte = baos.toByteArray();
-        baos.close();
-
-        return ocrService.performOcr(new MockMultipartFile("ImageFromPDF.png", imageInByte), "eng+ara");
+        try (PDDocument document = PDDocument.load(pdfInputStream)) {
+            PDFRenderer pdfRenderer = new PDFRenderer(document);
+            StringBuilder allPagesText = new StringBuilder();
+    
+            for (int page = 0; page < document.getNumberOfPages(); ++page) {
+                BufferedImage image = pdfRenderer.renderImageWithDPI(page, 300);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(image, "png", baos);
+                byte[] imageInByte = baos.toByteArray();
+                baos.close();
+    
+                String result = ocrService.performOcr(new MockMultipartFile("ImageFromPDF.png", imageInByte), "eng+ara");
+                allPagesText.append(result);
+            }
+    
+            return allPagesText.toString();
+        }
     }
 
     public BufferedImage pdfToImage(InputStream pdfInputStream) throws IOException {
