@@ -8,6 +8,7 @@ import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.ocrtesting.ocr.PdfExtractionStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.awt.image.BufferedImage;
@@ -25,7 +26,27 @@ public class PdfService {
     @Autowired
     private OcrService ocrService;
 
-    public String extractTextFromPdfWithIText(InputStream pdfInputStream) throws IOException {
+    public String extractTextFromPdf(InputStream pdfInputStream,PdfExtractionStrategy strategy) throws IOException {
+        String output = "";
+
+        if (strategy == PdfExtractionStrategy.NORMAL_EXTRACTION) {
+            System.out.println("Performing pdf extraction");
+            output = extractTextFromPdfWithIText(pdfInputStream);
+        }
+
+        if (strategy == PdfExtractionStrategy.TRANSFORM_TO_IMAGE) {
+            System.out.println("Performing Pdf transformation to image");
+            output = extractTextFromPdfWithImageTransform(pdfInputStream);
+        }
+
+        if (strategy == PdfExtractionStrategy.IGNORE_PDF) {
+            throw new IOException();
+        }
+
+        return output;
+    }
+
+    private String extractTextFromPdfWithIText(InputStream pdfInputStream) throws IOException {
 
         StringBuilder pdfTextBuilder = new StringBuilder();
 
@@ -52,7 +73,7 @@ public class PdfService {
         }
     }
 
-    public String extractTextFromPdfWithPdfBox(InputStream pdfInputStream) {
+    private String extractTextFromPdfWithPdfBox(InputStream pdfInputStream) {
         StringBuilder pdfTextBuilder = new StringBuilder();
 
         try {
@@ -70,7 +91,7 @@ public class PdfService {
         return pdfTextBuilder.toString();
     }
 
-    public String extractTextFromPdfWithImageTransform(InputStream pdfInputStream) throws IOException {
+    private String extractTextFromPdfWithImageTransform(InputStream pdfInputStream) throws IOException {
         try (PDDocument document = PDDocument.load(pdfInputStream)) {
             PDFRenderer pdfRenderer = new PDFRenderer(document);
             StringBuilder allPagesText = new StringBuilder();
@@ -82,21 +103,11 @@ public class PdfService {
                 byte[] imageInByte = baos.toByteArray();
                 baos.close();
     
-                String result = ocrService.performOcr(new MockMultipartFile("ImageFromPDF.png", imageInByte), "eng+ara");
+                String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte), "eng+ara");
                 allPagesText.append(result);
             }
     
             return allPagesText.toString();
-        }
-    }
-
-    public BufferedImage pdfToImage(InputStream pdfInputStream) throws IOException {
-        try (PDDocument document = PDDocument.load(pdfInputStream)) {
-            PDFRenderer pdfRenderer = new PDFRenderer(document);
-            return pdfRenderer.renderImageWithDPI(0, 300); // 0 is the page number, 300 is the DPI
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
     }
 }

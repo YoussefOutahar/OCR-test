@@ -15,6 +15,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Service
 public class OcrService {
@@ -23,7 +24,27 @@ public class OcrService {
         System.loadLibrary(org.opencv.core.Core.NATIVE_LIBRARY_NAME);
     }
 
-    public String performOcr(MultipartFile imageFile, String language) throws IOException {
+    public String performOCR(MultipartFile imageFile, String language) throws IOException {
+        try {
+
+            byte[] bytes = imageFile.getBytes();
+            InputStream is = new ByteArrayInputStream(bytes);
+            BufferedImage bufferedImage = ImageIO.read(is);
+
+            // Perform OCR on the preprocessed image
+            ITesseract tesseract = new Tesseract();
+            tesseract.setDatapath("C:/Users/Root/Desktop/OCR-test/src/main/resources/OCR/tessdata");
+            tesseract.setTessVariable("dpi", "300");
+            tesseract.setLanguage(language);
+            return tesseract.doOCR(bufferedImage);
+        } catch (IOException | TesseractException e) {
+            e.printStackTrace();
+            return "Error performing OCR";
+        }
+    
+    }
+
+    public String performOcrWithOptimisation(MultipartFile imageFile, String language) throws IOException {
         try {
             // Load image using OpenCV
             byte[] bytes = imageFile.getBytes();

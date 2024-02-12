@@ -2,6 +2,7 @@ package org.ocrtesting.ocr.Controllers;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.ocrtesting.ocr.PdfExtractionStrategy;
 import org.ocrtesting.ocr.Services.OcrService;
 import org.ocrtesting.ocr.Services.PdfService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,20 +32,21 @@ public class OcrController {
     @PostMapping("/perform")
     public String performOcr(@RequestPart("file") MultipartFile file, @RequestPart("language") String language) {
         try {
+            // Handle image file
             if (file.getContentType() != null && file.getContentType().startsWith("image")) {
-                // Handle image file
-                return ocrService.performOcr(file, language);
-            } else if (file.getContentType() != null && file.getContentType().startsWith("application/pdf")) {
-                // Handle PDF file
-                return pdfService.extractTextFromPdfWithImageTransform(file.getInputStream());
-            } else {
-                // Unsupported file type
-                return "Unsupported file type";
-            }
+                return ocrService.performOCR(file, language);
+            } 
+            
+            // Handle PDF file
+            if (file.getContentType() != null && file.getContentType().startsWith("application/pdf")) {
+                return pdfService.extractTextFromPdf(file.getInputStream(), PdfExtractionStrategy.TRANSFORM_TO_IMAGE);
+            } 
         } catch (IOException e) {
             e.printStackTrace();
             return "Error processing file";
         }
+        
+        return "Unsupported file type";
     }
 
     
