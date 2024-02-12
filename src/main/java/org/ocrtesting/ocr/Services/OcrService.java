@@ -33,17 +33,13 @@ public class OcrService {
 
     public String performOCR(MultipartFile imageFile, String language) throws IOException {
         try {
-
             byte[] bytes = imageFile.getBytes();
             InputStream is = new ByteArrayInputStream(bytes);
             BufferedImage bufferedImage = ImageIO.read(is);
 
-            // Perform OCR on the preprocessed image
             ITesseract tesseract = new Tesseract();
             tesseract.setDatapath("C:/Users/Root/Desktop/OCR-test/src/main/resources/OCR/tessdata");
-            String debugTest = languageDetectionService.getLanguageFromRequest(language);
-            System.out.println(debugTest);
-            tesseract.setLanguage(debugTest);
+            tesseract.setLanguage(languageDetectionService.getLanguageFromRequest(language));
             return tesseract.doOCR(bufferedImage);
         } catch (IOException | TesseractException e) {
             e.printStackTrace();

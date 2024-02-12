@@ -29,6 +29,7 @@ public class OcrController {
         this.pdfService = pdfService;
     }
 
+    // TODO call just the service
     @PostMapping("/perform")
     public String performOcr(@RequestPart("file") MultipartFile file, @RequestPart("language") String language) {
         try {

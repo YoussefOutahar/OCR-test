@@ -31,12 +31,12 @@ public class LanguageDetectionService {
     }
 
     public boolean isProbablyMalExtracted (String text){
-        List<Character> charsIndicatingMalExtract = Arrays.asList('','Ø','Ý','¾','¬', '¿', '¤', '¦', '¨','¼','¸','ß','Þ','Ö','','¹','¿'); // 'Áّ' add this to list
-        for (char c : text.toCharArray()) {
-            if (charsIndicatingMalExtract.contains(c)) {
-                return true;
-            }
+        List<String> charsIndicatingMalExtract = Arrays.asList("","Ø","Ý","¾","¬", "¿", "¤", "¦", "¨","¼","½","¸","ß","Þ","Ö","","¹","¿","Áّ","","","","","\b","","","","","");
+        
+        for (String c : charsIndicatingMalExtract){
+            if (text.contains(c)) return true;
         }
+
         return false;
     }
 }

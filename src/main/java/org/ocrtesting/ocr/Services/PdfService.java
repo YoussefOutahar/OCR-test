@@ -1,10 +1,5 @@
 package org.ocrtesting.ocr.Services;
 
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.parser.LocationTextExtractionStrategy;
-import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
-import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
-
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -33,18 +28,15 @@ public class PdfService {
     public String extractTextFromPdf(InputStream pdfInputStream, PdfExtractionStrategy strategy) throws IOException {
         String output = "";
 
-        if (strategy == PdfExtractionStrategy.ADAPTIVE) {
-            System.out.println("Performing Adaptive pdf extraction");
+        if (PdfExtractionStrategy.ADAPTIVE.equals(strategy)) {
             output = adaptiveExtract(pdfInputStream);
         }
 
         if (strategy == PdfExtractionStrategy.NORMAL_EXTRACTION) {
-            System.out.println("Performing Normal pdf extraction");
             output = extractTextFromPdfWithPdfBox(pdfInputStream);
         }
 
         if (strategy == PdfExtractionStrategy.TRANSFORM_TO_IMAGE) {
-            System.out.println("Performing Pdf transformation to image");
             output = extractTextFromPdfWithImageTransform(pdfInputStream);
         }
 
@@ -74,28 +66,28 @@ public class PdfService {
                 boolean isMalExtracted = languageDetectionService.isProbablyMalExtracted(resultantString);
 
                 if (isMalExtracted) {
-                    System.out.println("detected Mal extraction at page " + pageIndex );
-                    BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    ImageIO.write(image, "png", baos);
-                    byte[] imageInByte = baos.toByteArray();
-                    baos.close();
-
-                    String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte),
-                            Language.ARABE_LATIN.label);
-                    pdfTextBuilder.append(result);
-                    System.out.println(result);
-                } else {
-                    System.out.println("extracting normaly at page " + pageIndex);
-                    System.out.println(resultantString);
-                    pdfTextBuilder.append(resultantString);
-                }
+                    resultantString = getImageInByte(pdfRenderer, pageIndex);
+                } 
+                pdfTextBuilder.append(resultantString);
             }
             return pdfTextBuilder.toString();
         } catch (IOException e) {
             e.printStackTrace();
             return "Error extracting text from PDF";
         }
+    }
+
+    private String getImageInByte(PDFRenderer pdfRenderer, int pageIndex) throws IOException {
+        String resultantString;
+        BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", baos);
+        byte[] imageInByte = baos.toByteArray();
+        baos.close();
+
+        resultantString = ocrService.performOCR(new MockMultipartFile("PDF.png", imageInByte),
+                Language.ARABE_LATIN.label);
+        return resultantString;
     }
 
     private String extractTextFromPdfWithImageTransform(InputStream pdfInputStream) throws IOException {
@@ -117,34 +109,11 @@ public class PdfService {
             }
 
             return allPagesText.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "Error extracting text from PDF";
         }
     }
-
-    // private String extractTextFromPdfWithIText(InputStream pdfInputStream) throws
-    // IOException {
-    // StringBuilder pdfTextBuilder = new StringBuilder();
-
-    // try {
-    // PdfReader reader = new PdfReader(pdfInputStream);
-    // PdfReaderContentParser parser = new PdfReaderContentParser(reader);
-    // TextExtractionStrategy strategy;
-
-    // for (int i = 1; i <= reader.getNumberOfPages(); i++) {
-
-    // strategy = parser.processContent(i, new LocationTextExtractionStrategy());
-
-    // pdfTextBuilder.append(strategy.getResultantText());
-    // pdfTextBuilder.append("\n--- Page Break ---\n");
-    // }
-
-    // reader.close();
-
-    // return pdfTextBuilder.toString();
-    // } catch (IOException e) {
-    // e.printStackTrace();
-    // return "Error extracting text from PDF";
-    // }
-    // }
 
     private String extractTextFromPdfWithPdfBox(InputStream pdfInputStream) {
         StringBuilder pdfTextBuilder = new StringBuilder();
