@@ -4,7 +4,7 @@ import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 
-import org.ocrtesting.ocr.Enums.Languages;
+import org.ocrtesting.ocr.Enums.Language;
 import org.ocrtesting.ocr.Exceptions.LanguageException;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -41,7 +41,9 @@ public class OcrService {
             // Perform OCR on the preprocessed image
             ITesseract tesseract = new Tesseract();
             tesseract.setDatapath("C:/Users/Root/Desktop/OCR-test/src/main/resources/OCR/tessdata");
-            tesseract.setLanguage(languageDetectionService.getLanguageFromRequest(language));
+            String debugTest = languageDetectionService.getLanguageFromRequest(language);
+            System.out.println(debugTest);
+            tesseract.setLanguage(debugTest);
             return tesseract.doOCR(bufferedImage);
         } catch (IOException | TesseractException e) {
             e.printStackTrace();

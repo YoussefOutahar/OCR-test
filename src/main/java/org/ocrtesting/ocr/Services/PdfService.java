@@ -8,6 +8,7 @@ import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.ocrtesting.ocr.Enums.Language;
 import org.ocrtesting.ocr.Enums.PdfExtractionStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,8 +26,6 @@ public class PdfService {
 
     @Autowired
     private OcrService ocrService;
-
-    private String language = "eng+ara";
 
     public String extractTextFromPdf(InputStream pdfInputStream,PdfExtractionStrategy strategy) throws IOException {
         String output = "";
@@ -48,7 +47,30 @@ public class PdfService {
         return output;
     }
 
+    private String extractTextFromPdfWithImageTransform(InputStream pdfInputStream) throws IOException {
+        try (PDDocument document = PDDocument.load(pdfInputStream)) {
+            PDFRenderer pdfRenderer = new PDFRenderer(document);
+            StringBuilder allPagesText = new StringBuilder();
+    
+            for (int page = 0; page < document.getNumberOfPages(); ++page) {
+                BufferedImage image = pdfRenderer.renderImageWithDPI(page, 300);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(image, "png", baos);
+                byte[] imageInByte = baos.toByteArray();
+                baos.close();
+    
+                // TODO: implement language detection for pdf Case
+                String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte), Language.ARABE_LATIN.label);
+                allPagesText.append(result);
+            }
+    
+            return allPagesText.toString();
+        }
+    }
+
     private String extractTextFromPdfWithIText(InputStream pdfInputStream) throws IOException {
+
+        boolean shouldUseOCR = false;
 
         StringBuilder pdfTextBuilder = new StringBuilder();
 
@@ -91,26 +113,5 @@ public class PdfService {
         }
 
         return pdfTextBuilder.toString();
-    }
-
-    private String extractTextFromPdfWithImageTransform(InputStream pdfInputStream) throws IOException {
-        try (PDDocument document = PDDocument.load(pdfInputStream)) {
-            PDFRenderer pdfRenderer = new PDFRenderer(document);
-            StringBuilder allPagesText = new StringBuilder();
-    
-            for (int page = 0; page < document.getNumberOfPages(); ++page) {
-                BufferedImage image = pdfRenderer.renderImageWithDPI(page, 300);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(image, "png", baos);
-                byte[] imageInByte = baos.toByteArray();
-                baos.close();
-    
-                // TODO: implement language detection for pdf Case
-                String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte), this.language);
-                allPagesText.append(result);
-            }
-    
-            return allPagesText.toString();
-        }
     }
 }

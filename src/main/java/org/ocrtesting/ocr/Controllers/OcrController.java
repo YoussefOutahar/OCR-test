@@ -39,7 +39,7 @@ public class OcrController {
             
             // Handle PDF file
             if (file.getContentType() != null && file.getContentType().startsWith("application/pdf")) {
-                return pdfService.extractTextFromPdf(file.getInputStream(), PdfExtractionStrategy.TRANSFORM_TO_IMAGE);
+                return pdfService.extractTextFromPdf(file.getInputStream(), PdfExtractionStrategy.NORMAL_EXTRACTION);
             } 
         } catch (IOException e) {
             e.printStackTrace();
