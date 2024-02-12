@@ -1,6 +1,8 @@
 package org.ocrtesting.ocr.Services;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.ocrtesting.ocr.Enums.Language;
 import org.ocrtesting.ocr.Exceptions.LanguageException;
@@ -20,11 +22,21 @@ public class LanguageDetectionService {
         throw new LanguageException("Unsupported Language");
     }
 
-    // Detects Language using the first 2 pages that contains text:
-    // public Language detectArabeLanguage() {
+    public boolean isProbablyArabic(String text) {
+        return text.matches(".*\\p{InArabic}.*");
+    }
 
-    // } 
+    public boolean isProbablyFrench(String text) {
+        return text.matches(".*\\p{InFrench}.*");
+    }
 
-    // private boolean pdfContainsText() throws IOException {
-    // }
+    public boolean isProbablyMalExtracted (String text){
+        List<Character> charsIndicatingMalExtract = Arrays.asList('','Ø','Ý','¾','¬', '¿', '¤', '¦', '¨','¼','¸','ß','Þ','Ö');
+        for (char c : text.toCharArray()) {
+            if (charsIndicatingMalExtract.contains(c)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
