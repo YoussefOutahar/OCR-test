@@ -32,12 +32,10 @@ public class OcrController {
     @PostMapping("/perform")
     public String performOcr(@RequestPart("file") MultipartFile file, @RequestPart("language") String language) {
         try {
-            // Handle image file
             if (file.getContentType() != null && file.getContentType().startsWith("image")) {
                 return ocrService.performOCR(file, language);
             } 
             
-            // Handle PDF file
             if (file.getContentType() != null && file.getContentType().startsWith("application/pdf")) {
                 return pdfService.extractTextFromPdf(file.getInputStream(), PdfExtractionStrategy.ADAPTIVE);
             } 

@@ -40,7 +40,7 @@ public class PdfService {
 
         if (strategy == PdfExtractionStrategy.NORMAL_EXTRACTION) {
             System.out.println("Performing Normal pdf extraction");
-            output = extractTextFromPdfWithIText(pdfInputStream);
+            output = extractTextFromPdfWithPdfBox(pdfInputStream);
         }
 
         if (strategy == PdfExtractionStrategy.TRANSFORM_TO_IMAGE) {
@@ -60,18 +60,16 @@ public class PdfService {
 
         try (PDDocument document = PDDocument.load(pdfInputStream)) {
 
-            // For Normal text extraction
-            PdfReader reader = new PdfReader(pdfInputStream);
-            PdfReaderContentParser parser = new PdfReaderContentParser(reader);
-            TextExtractionStrategy strategy;
+            // For normal extraction
+            PDFTextStripper pdfStripper = new PDFTextStripper();
 
             // For OCR text extraction
             PDFRenderer pdfRenderer = new PDFRenderer(document);
 
-            for (int pageIndex = 1; pageIndex <= reader.getNumberOfPages(); pageIndex++) {
-
-                strategy = parser.processContent(pageIndex, new LocationTextExtractionStrategy());
-                String resultantString = strategy.getResultantText();
+            for (int pageIndex = 0; pageIndex < document.getNumberOfPages(); pageIndex++) {
+                pdfStripper.setStartPage(pageIndex);
+                pdfStripper.setEndPage(pageIndex);
+                String resultantString = pdfStripper.getText(document);
 
                 boolean isMalExtracted = languageDetectionService.isProbablyMalExtracted(resultantString);
 
@@ -86,12 +84,13 @@ public class PdfService {
                     String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte),
                             Language.ARABE_LATIN.label);
                     pdfTextBuilder.append(result);
+                    System.out.println(result);
                 } else {
                     System.out.println("extracting normaly at page " + pageIndex);
+                    System.out.println(resultantString);
                     pdfTextBuilder.append(resultantString);
                 }
             }
-            reader.close();
             return pdfTextBuilder.toString();
         } catch (IOException e) {
             e.printStackTrace();
@@ -121,47 +120,48 @@ public class PdfService {
         }
     }
 
-    private String extractTextFromPdfWithIText(InputStream pdfInputStream) throws IOException {
+    // private String extractTextFromPdfWithIText(InputStream pdfInputStream) throws
+    // IOException {
+    // StringBuilder pdfTextBuilder = new StringBuilder();
+
+    // try {
+    // PdfReader reader = new PdfReader(pdfInputStream);
+    // PdfReaderContentParser parser = new PdfReaderContentParser(reader);
+    // TextExtractionStrategy strategy;
+
+    // for (int i = 1; i <= reader.getNumberOfPages(); i++) {
+
+    // strategy = parser.processContent(i, new LocationTextExtractionStrategy());
+
+    // pdfTextBuilder.append(strategy.getResultantText());
+    // pdfTextBuilder.append("\n--- Page Break ---\n");
+    // }
+
+    // reader.close();
+
+    // return pdfTextBuilder.toString();
+    // } catch (IOException e) {
+    // e.printStackTrace();
+    // return "Error extracting text from PDF";
+    // }
+    // }
+
+    private String extractTextFromPdfWithPdfBox(InputStream pdfInputStream) {
         StringBuilder pdfTextBuilder = new StringBuilder();
 
         try {
-            PdfReader reader = new PdfReader(pdfInputStream);
-            PdfReaderContentParser parser = new PdfReaderContentParser(reader);
-            TextExtractionStrategy strategy;
+            PDDocument document = PDDocument.load(pdfInputStream);
 
-            for (int i = 1; i <= reader.getNumberOfPages(); i++) {
+            // PDFont font = PDTrueTypeFont.loadTTF(document, new
+            // File("Fonts/Noto_Naskh_Arabic/NotoNaskhArabic-VariableFont_wght.ttf"));
+            PDFTextStripper stripper = new PDFTextStripper();
+            pdfTextBuilder.append(stripper.getText(document));
 
-                strategy = parser.processContent(i, new LocationTextExtractionStrategy());
-
-                pdfTextBuilder.append(strategy.getResultantText());
-                pdfTextBuilder.append("\n--- Page Break ---\n");
-            }
-
-            reader.close();
-
-            return pdfTextBuilder.toString();
+            document.close();
         } catch (IOException e) {
-            e.printStackTrace();
-            return "Error extracting text from PDF";
+            throw new RuntimeException(e);
         }
+
+        return pdfTextBuilder.toString();
     }
-
-    // private String extractTextFromPdfWithPdfBox(InputStream pdfInputStream) {
-    //     StringBuilder pdfTextBuilder = new StringBuilder();
-
-    //     try {
-    //         PDDocument document = PDDocument.load(pdfInputStream);
-
-    //         // PDFont font = PDTrueTypeFont.loadTTF(document, new
-    //         // File("Fonts/Noto_Naskh_Arabic/NotoNaskhArabic-VariableFont_wght.ttf"));
-    //         PDFTextStripper stripper = new PDFTextStripper();
-    //         pdfTextBuilder.append(stripper.getText(document));
-
-    //         document.close();
-    //     } catch (IOException e) {
-    //         throw new RuntimeException(e);
-    //     }
-
-    //     return pdfTextBuilder.toString();
-    // }
 }
