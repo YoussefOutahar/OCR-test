@@ -3,11 +3,15 @@ package org.ocrtesting.ocr.Services;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
+
+import org.ocrtesting.ocr.Enums.Languages;
+import org.ocrtesting.ocr.Exceptions.LanguageException;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,6 +28,9 @@ public class OcrService {
         System.loadLibrary(org.opencv.core.Core.NATIVE_LIBRARY_NAME);
     }
 
+    @Autowired
+    private LanguageDetectionService languageDetectionService;
+
     public String performOCR(MultipartFile imageFile, String language) throws IOException {
         try {
 
@@ -34,13 +41,16 @@ public class OcrService {
             // Perform OCR on the preprocessed image
             ITesseract tesseract = new Tesseract();
             tesseract.setDatapath("C:/Users/Root/Desktop/OCR-test/src/main/resources/OCR/tessdata");
-            tesseract.setLanguage(language);
+            tesseract.setLanguage(languageDetectionService.getLanguageFromRequest(language));
             return tesseract.doOCR(bufferedImage);
         } catch (IOException | TesseractException e) {
             e.printStackTrace();
             return "Error performing OCR";
+        } catch (LanguageException e) {
+            e.printStackTrace();
+            return "Unsupported Language";
         }
-    
+
     }
 
     public String performOcrWithOptimisation(MultipartFile imageFile, String language) throws IOException {

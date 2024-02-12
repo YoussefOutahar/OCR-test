@@ -2,7 +2,7 @@ package org.ocrtesting.ocr.Controllers;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
-import org.ocrtesting.ocr.PdfExtractionStrategy;
+import org.ocrtesting.ocr.Enums.PdfExtractionStrategy;
 import org.ocrtesting.ocr.Services.OcrService;
 import org.ocrtesting.ocr.Services.PdfService;
 import org.springframework.beans.factory.annotation.Autowired;

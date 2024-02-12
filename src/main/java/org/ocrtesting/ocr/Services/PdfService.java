@@ -8,7 +8,7 @@ import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.ocrtesting.ocr.PdfExtractionStrategy;
+import org.ocrtesting.ocr.Enums.PdfExtractionStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.awt.image.BufferedImage;
@@ -105,6 +105,7 @@ public class PdfService {
                 byte[] imageInByte = baos.toByteArray();
                 baos.close();
     
+                // TODO: implement language detection for pdf Case
                 String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte), this.language);
                 allPagesText.append(result);
             }

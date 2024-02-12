@@ -1,4 +1,4 @@
-package org.ocrtesting.ocr;
+package org.ocrtesting.ocr.Enums;
 
 public enum PdfExtractionStrategy {
     TRANSFORM_TO_IMAGE,
