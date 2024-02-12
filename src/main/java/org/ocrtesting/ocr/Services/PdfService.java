@@ -28,21 +28,14 @@ public class PdfService {
     public String extractTextFromPdf(InputStream pdfInputStream, PdfExtractionStrategy strategy) throws IOException {
         String output = "";
 
-        if (PdfExtractionStrategy.ADAPTIVE.equals(strategy)) {
+        if (PdfExtractionStrategy.ADAPTIVE.equals(strategy))
             output = adaptiveExtract(pdfInputStream);
-        }
 
-        if (strategy == PdfExtractionStrategy.NORMAL_EXTRACTION) {
+        if (PdfExtractionStrategy.NORMAL_EXTRACTION.equals(strategy))
             output = extractTextFromPdfWithPdfBox(pdfInputStream);
-        }
 
-        if (strategy == PdfExtractionStrategy.TRANSFORM_TO_IMAGE) {
+        if (PdfExtractionStrategy.TRANSFORM_TO_IMAGE.equals(strategy))
             output = extractTextFromPdfWithImageTransform(pdfInputStream);
-        }
-
-        if (strategy == PdfExtractionStrategy.IGNORE_PDF) {
-            throw new IOException();
-        }
 
         return output;
     }
@@ -52,10 +45,7 @@ public class PdfService {
 
         try (PDDocument document = PDDocument.load(pdfInputStream)) {
 
-            // For normal extraction
             PDFTextStripper pdfStripper = new PDFTextStripper();
-
-            // For OCR text extraction
             PDFRenderer pdfRenderer = new PDFRenderer(document);
 
             for (int pageIndex = 0; pageIndex < document.getNumberOfPages(); pageIndex++) {
@@ -66,8 +56,9 @@ public class PdfService {
                 boolean isMalExtracted = languageDetectionService.isProbablyMalExtracted(resultantString);
 
                 if (isMalExtracted) {
-                    resultantString = getImageInByte(pdfRenderer, pageIndex);
-                } 
+                    resultantString = getImageTextWithOCR(pdfRenderer, pageIndex);
+                }
+
                 pdfTextBuilder.append(resultantString);
             }
             return pdfTextBuilder.toString();
@@ -77,19 +68,6 @@ public class PdfService {
         }
     }
 
-    private String getImageInByte(PDFRenderer pdfRenderer, int pageIndex) throws IOException {
-        String resultantString;
-        BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", baos);
-        byte[] imageInByte = baos.toByteArray();
-        baos.close();
-
-        resultantString = ocrService.performOCR(new MockMultipartFile("PDF.png", imageInByte),
-                Language.ARABE_LATIN.label);
-        return resultantString;
-    }
-
     private String extractTextFromPdfWithImageTransform(InputStream pdfInputStream) throws IOException {
         StringBuilder allPagesText = new StringBuilder();
 
@@ -97,15 +75,7 @@ public class PdfService {
             PDFRenderer pdfRenderer = new PDFRenderer(document);
 
             for (int page = 0; page < document.getNumberOfPages(); ++page) {
-                BufferedImage image = pdfRenderer.renderImageWithDPI(page, 300);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(image, "png", baos);
-                byte[] imageInByte = baos.toByteArray();
-                baos.close();
-
-                String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte),
-                        Language.ARABE_LATIN.label);
-                allPagesText.append(result);
+                allPagesText.append(getImageTextWithOCR(pdfRenderer, page));
             }
 
             return allPagesText.toString();
@@ -120,9 +90,6 @@ public class PdfService {
 
         try {
             PDDocument document = PDDocument.load(pdfInputStream);
-
-            // PDFont font = PDTrueTypeFont.loadTTF(document, new
-            // File("Fonts/Noto_Naskh_Arabic/NotoNaskhArabic-VariableFont_wght.ttf"));
             PDFTextStripper stripper = new PDFTextStripper();
             pdfTextBuilder.append(stripper.getText(document));
 
@@ -132,5 +99,18 @@ public class PdfService {
         }
 
         return pdfTextBuilder.toString();
+    }
+
+    private String getImageTextWithOCR(PDFRenderer pdfRenderer, int pageIndex) throws IOException {
+        String resultantString;
+        BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", baos);
+        byte[] imageInByte = baos.toByteArray();
+        baos.close();
+
+        resultantString = ocrService.performOCR(new MockMultipartFile("PDF.png", imageInByte),
+                Language.ARABE_LATIN.label);
+        return resultantString;
     }
 }

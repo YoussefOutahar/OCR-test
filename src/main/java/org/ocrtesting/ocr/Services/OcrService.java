@@ -4,7 +4,6 @@ import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 
-import org.ocrtesting.ocr.Enums.Language;
 import org.ocrtesting.ocr.Exceptions.LanguageException;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
