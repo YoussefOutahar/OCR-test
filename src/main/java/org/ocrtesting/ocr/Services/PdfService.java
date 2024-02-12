@@ -26,6 +26,8 @@ public class PdfService {
     @Autowired
     private OcrService ocrService;
 
+    private String language = "eng+ara";
+
     public String extractTextFromPdf(InputStream pdfInputStream,PdfExtractionStrategy strategy) throws IOException {
         String output = "";
 
@@ -103,7 +105,7 @@ public class PdfService {
                 byte[] imageInByte = baos.toByteArray();
                 baos.close();
     
-                String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte), "eng+ara");
+                String result = ocrService.performOCR(new MockMultipartFile("ImageFromPDF.png", imageInByte), this.language);
                 allPagesText.append(result);
             }
     

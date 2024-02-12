@@ -34,7 +34,6 @@ public class OcrService {
             // Perform OCR on the preprocessed image
             ITesseract tesseract = new Tesseract();
             tesseract.setDatapath("C:/Users/Root/Desktop/OCR-test/src/main/resources/OCR/tessdata");
-            tesseract.setTessVariable("dpi", "300");
             tesseract.setLanguage(language);
             return tesseract.doOCR(bufferedImage);
         } catch (IOException | TesseractException e) {
